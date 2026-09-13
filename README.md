@@ -11,7 +11,6 @@ This is a new product. It is not the [figma-triage](https://github.com/amazingra
 - Puts new cards in the **leftmost** column. Default columns: To-do, In Progress, Done.
 - The board is **personal**. Two people in the same file have two boards.
 - Click a card to jump to the pin.
-- Ignore hides a card. A new reply unhides it and leaves it in the same column.
 - Drag to Done does **not** resolve the Figma comment (Figma has no official resolve API).
 - There is no web board. This auth site is only Sign in with Figma plus API.
 

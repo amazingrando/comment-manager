@@ -23,7 +23,6 @@ function card(
   return {
     figmaMessage: "Fix this",
     columnId: "col-doing",
-    ignoredAt: null,
     replyCount: 0,
     nodeId: "1:2",
     pageId: "0:1",
@@ -113,37 +112,13 @@ describe("planCommentSync", () => {
     expect(plan.update[0]!.id).toBe("card-1");
   });
 
-  it("unhides an ignored card when a new reply arrives", () => {
+  it("updates reply count without moving the card", () => {
     const plan = planCommentSync({
       comments: [root({ id: "c1", replyCount: 2 })],
-      cards: [
-        card({
-          id: "card-1",
-          figmaCommentId: "c1",
-          ignoredAt: "2026-01-01T00:00:00.000Z",
-          replyCount: 1,
-        }),
-      ],
+      cards: [card({ id: "card-1", figmaCommentId: "c1", replyCount: 1 })],
       leftmostColumnId: left,
     });
-    expect(plan.update[0]!.ignoredAt).toBeNull();
     expect(plan.update[0]!.replyCount).toBe(2);
-  });
-
-  it("keeps ignore when reply count is unchanged", () => {
-    const plan = planCommentSync({
-      comments: [root({ id: "c1", replyCount: 1 })],
-      cards: [
-        card({
-          id: "card-1",
-          figmaCommentId: "c1",
-          ignoredAt: "2026-01-01T00:00:00.000Z",
-          replyCount: 1,
-        }),
-      ],
-      leftmostColumnId: left,
-    });
-    expect(plan.update[0]!.ignoredAt).toBe("2026-01-01T00:00:00.000Z");
   });
 
   it("does not drop a card whose comment disappeared", () => {

@@ -36,7 +36,6 @@ function toExisting(cards: Card[]): ExistingCard[] {
     figmaCommentId: card.figma_comment_id,
     figmaMessage: card.figma_message,
     columnId: card.column_id,
-    ignoredAt: card.ignored_at,
     replyCount: card.reply_count,
     nodeId: card.node_id,
     pageId: card.page_id,
@@ -109,7 +108,6 @@ export async function syncFileBoard(input: {
       .update({
         figma_message: row.figmaMessage,
         reply_count: row.replyCount,
-        ignored_at: row.ignoredAt,
         node_id: row.nodeId,
         page_id: row.pageId,
         updated_at: now,

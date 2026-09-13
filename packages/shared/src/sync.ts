@@ -13,7 +13,6 @@ export type ExistingCard = {
   figmaCommentId: string;
   figmaMessage: string;
   columnId: string;
-  ignoredAt: string | null;
   replyCount: number;
   nodeId: string | null;
   pageId: string | null;
@@ -32,7 +31,6 @@ export type SyncUpdate = {
   id: string;
   figmaMessage: string;
   replyCount: number;
-  ignoredAt: string | null;
   nodeId: string | null;
   pageId: string | null;
 };
@@ -74,15 +72,10 @@ export function planCommentSync(input: {
       continue;
     }
 
-    const hasNewReply = root.replyCount > existing.replyCount;
-    const ignoredAt =
-      existing.ignoredAt && hasNewReply ? null : existing.ignoredAt;
-
     update.push({
       id: existing.id,
       figmaMessage: root.message,
       replyCount: root.replyCount,
-      ignoredAt,
       nodeId: root.nodeId,
       pageId: root.pageId,
     });

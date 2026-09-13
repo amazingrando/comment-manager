@@ -16,7 +16,7 @@ import {
   saveColumnSet,
 } from "./columns-api";
 import type { MainToUi } from "./messages";
-import type { BoardCard, BoardPayload, PluginSession } from "./types";
+import type { BoardPayload, PluginSession } from "./types";
 
 const LIVE_SYNC_MS = 5_000;
 
@@ -29,7 +29,6 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [target, setTarget] = useState<EditTarget>("file");
-  const [showIgnored, setShowIgnored] = useState(false);
   const [newColumn, setNewColumn] = useState("");
   const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
   const syncingRef = useRef(false);
@@ -192,9 +191,7 @@ export function App() {
   }
 
   const visibleCards = board.cards;
-  const emptyBoard =
-    mode === "file-board" &&
-    visibleCards.filter((card) => showIgnored || !card.ignored_at).length === 0;
+  const emptyBoard = mode === "file-board" && visibleCards.length === 0;
 
   return (
     <main className="app">
@@ -252,14 +249,6 @@ export function App() {
             Reset to default
           </button>
         ) : null}
-        <label>
-          <input
-            type="checkbox"
-            checked={showIgnored}
-            onChange={(event) => setShowIgnored(event.target.checked)}
-          />
-          Show ignored
-        </label>
         <button type="button" disabled={busy} onClick={() => void refreshBoard()}>
           {busy ? "Refreshing…" : "Refresh"}
         </button>
@@ -283,7 +272,6 @@ export function App() {
       <Board
         columns={visibleColumns}
         cards={mode === "default-editor" ? [] : visibleCards}
-        showIgnored={showIgnored}
         onMove={(cardId, columnId) => {
           if (!supabase) return;
           const card = board.cards.find((row) => row.id === cardId);
@@ -367,8 +355,6 @@ export function App() {
             );
         }}
         onOpen={(card) => postToMain({ type: "jump", nodeId: card.node_id })}
-        onIgnore={(card) => updateIgnore(card, new Date().toISOString())}
-        onUnignore={(card) => updateIgnore(card, null)}
       />
       <form
         className="add"
@@ -392,25 +378,4 @@ export function App() {
       </form>
     </main>
   );
-
-  function updateIgnore(card: BoardCard, ignoredAt: string | null) {
-    if (!supabase) return;
-    void supabase
-      .from("cards")
-      .update({ ignored_at: ignoredAt, updated_at: new Date().toISOString() })
-      .eq("id", card.id)
-      .then(({ error: updateError }) => {
-        if (updateError) setError(updateError.message);
-      });
-    setBoard((current) =>
-      current
-        ? {
-            ...current,
-            cards: current.cards.map((row) =>
-              row.id === card.id ? { ...row, ignored_at: ignoredAt } : row,
-            ),
-          }
-        : current,
-    );
-  }
 }

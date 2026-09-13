@@ -119,7 +119,6 @@ export type Database = {
           figma_comment_id: string;
           column_id: string;
           sort_rank: number;
-          ignored_at: string | null;
           reply_count: number;
           figma_message: string;
           node_id: string | null;
@@ -134,7 +133,6 @@ export type Database = {
           figma_comment_id: string;
           column_id: string;
           sort_rank?: number;
-          ignored_at?: string | null;
           reply_count?: number;
           figma_message?: string;
           node_id?: string | null;
@@ -149,7 +147,6 @@ export type Database = {
           figma_comment_id?: string;
           column_id?: string;
           sort_rank?: number;
-          ignored_at?: string | null;
           reply_count?: number;
           figma_message?: string;
           node_id?: string | null;

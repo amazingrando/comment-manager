@@ -16,13 +16,9 @@ import type { BoardCard } from "./types";
 function DraggableCard({
   card,
   onOpen,
-  onIgnore,
-  onUnignore,
 }: {
   card: BoardCard;
   onOpen: (card: BoardCard) => void;
-  onIgnore: (card: BoardCard) => void;
-  onUnignore: (card: BoardCard) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({ id: card.id });
@@ -42,15 +38,6 @@ function DraggableCard({
       <button className="card-body" type="button" onClick={() => onOpen(card)}>
         {card.figma_message || "(empty comment)"}
       </button>
-      {card.ignored_at ? (
-        <button type="button" onClick={() => onUnignore(card)}>
-          Unhide
-        </button>
-      ) : (
-        <button type="button" onClick={() => onIgnore(card)}>
-          Ignore
-        </button>
-      )}
     </article>
   );
 }
@@ -62,8 +49,6 @@ function ColumnLane({
   onRename,
   onDelete,
   onOpen,
-  onIgnore,
-  onUnignore,
 }: {
   column: Column;
   cards: BoardCard[];
@@ -71,8 +56,6 @@ function ColumnLane({
   onRename: (columnId: string, name: string) => void;
   onDelete: (columnId: string) => void;
   onOpen: (card: BoardCard) => void;
-  onIgnore: (card: BoardCard) => void;
-  onUnignore: (card: BoardCard) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
   const [name, setName] = useState(column.name);
@@ -104,13 +87,7 @@ function ColumnLane({
       </header>
       <div className="column-cards">
         {cards.map((card) => (
-          <DraggableCard
-            key={card.id}
-            card={card}
-            onOpen={onOpen}
-            onIgnore={onIgnore}
-            onUnignore={onUnignore}
-          />
+          <DraggableCard key={card.id} card={card} onOpen={onOpen} />
         ))}
       </div>
     </section>
@@ -120,23 +97,17 @@ function ColumnLane({
 export function Board({
   columns,
   cards,
-  showIgnored,
   onMove,
   onRename,
   onDelete,
   onOpen,
-  onIgnore,
-  onUnignore,
 }: {
   columns: Column[];
   cards: BoardCard[];
-  showIgnored: boolean;
   onMove: (cardId: string, columnId: string) => void;
   onRename: (columnId: string, name: string) => void;
   onDelete: (columnId: string) => void;
   onOpen: (card: BoardCard) => void;
-  onIgnore: (card: BoardCard) => void;
-  onUnignore: (card: BoardCard) => void;
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -147,7 +118,6 @@ export function Board({
     const map = new Map<string, BoardCard[]>();
     for (const column of sorted) map.set(column.id, []);
     for (const card of cards) {
-      if (!showIgnored && card.ignored_at) continue;
       const list = map.get(card.column_id);
       if (list) list.push(card);
     }
@@ -155,7 +125,7 @@ export function Board({
       list.sort((a, b) => a.sort_rank - b.sort_rank);
     }
     return map;
-  }, [cards, showIgnored, sorted]);
+  }, [cards, sorted]);
 
   function onDragEnd(event: DragEndEvent) {
     setError(null);
@@ -179,8 +149,6 @@ export function Board({
             onRename={onRename}
             onDelete={onDelete}
             onOpen={onOpen}
-            onIgnore={onIgnore}
-            onUnignore={onUnignore}
           />
         ))}
       </div>

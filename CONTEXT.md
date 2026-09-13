@@ -16,10 +16,6 @@ _Avoid_: swimlane, workspace board
 One root Figma comment. Replies are not cards. Click a card to jump to the pin.
 _Avoid_: ticket, issue, thread
 
-**Ignore**:
-A personal hide. A new reply unhides the card and leaves it in the same column.
-_Avoid_: archive, resolve, Done
-
 ## Rules
 
 - The board is personal. Two people in the same file have two boards.
