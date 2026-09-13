@@ -12,6 +12,8 @@ function root(
     resolvedAt: null,
     nodeId: "1:2",
     pageId: "0:1",
+    pinX: 12,
+    pinY: 24,
     replyCount: 0,
     ...overrides,
   };
@@ -26,6 +28,8 @@ function card(
     replyCount: 0,
     nodeId: "1:2",
     pageId: "0:1",
+    pinX: 12,
+    pinY: 24,
     ...overrides,
   };
 }
@@ -45,6 +49,8 @@ describe("planCommentSync", () => {
         replyCount: 0,
         nodeId: "1:2",
         pageId: "0:1",
+        pinX: 12,
+        pinY: 24,
       },
     ]);
     expect(plan.update).toEqual([]);
@@ -79,6 +85,8 @@ describe("planCommentSync", () => {
           resolvedAt: null,
           nodeId: null,
           pageId: null,
+          pinX: null,
+          pinY: null,
           replyCount: 0,
         },
       ],

@@ -28,15 +28,26 @@ function DraggableCard({
   };
 
   return (
-    <article
-      ref={setNodeRef}
-      style={style}
-      className="card"
-      {...listeners}
-      {...attributes}
-    >
-      <button className="card-body" type="button" onClick={() => onOpen(card)}>
+    <article ref={setNodeRef} style={style} className="card">
+      <button
+        className="card-body"
+        type="button"
+        onPointerDown={(event) => {
+          if (event.button !== 0) return;
+          event.stopPropagation();
+          onOpen(card);
+        }}
+      >
         {card.figma_message || "(empty comment)"}
+      </button>
+      <button
+        className="card-drag"
+        type="button"
+        aria-label="Move card"
+        {...listeners}
+        {...attributes}
+      >
+        ⋮⋮
       </button>
     </article>
   );
@@ -82,7 +93,7 @@ export function Board({
   onOpen: (card: BoardCard) => void;
 }) {
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   );
   const [error, setError] = useState<string | null>(null);
   const sorted = useMemo(() => sortColumns(columns), [columns]);

@@ -71,12 +71,15 @@
   border-radius: 6px;
   padding: 8px;
   display: flex;
-  flex-direction: column;
   gap: 6px;
+  align-items: flex-start;
   box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
 }
 
 .card-body {
+  flex: 1;
+  margin: 0;
+  padding: 0;
   text-align: left;
   border: 0;
   background: transparent;
@@ -86,8 +89,14 @@
   white-space: pre-wrap;
 }
 
-.card button {
-  font-size: 11px;
+.card-drag {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: var(--figma-color-text-secondary, #666);
+  cursor: grab;
+  line-height: 1;
+  padding: 0 2px;
 }
 
 button,

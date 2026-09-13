@@ -5,6 +5,8 @@ export type IncomingComment = {
   resolvedAt: string | null;
   nodeId: string | null;
   pageId: string | null;
+  pinX: number | null;
+  pinY: number | null;
   replyCount: number;
 };
 
@@ -16,6 +18,8 @@ export type ExistingCard = {
   replyCount: number;
   nodeId: string | null;
   pageId: string | null;
+  pinX: number | null;
+  pinY: number | null;
 };
 
 export type SyncInsert = {
@@ -25,6 +29,8 @@ export type SyncInsert = {
   replyCount: number;
   nodeId: string | null;
   pageId: string | null;
+  pinX: number | null;
+  pinY: number | null;
 };
 
 export type SyncUpdate = {
@@ -33,6 +39,8 @@ export type SyncUpdate = {
   replyCount: number;
   nodeId: string | null;
   pageId: string | null;
+  pinX: number | null;
+  pinY: number | null;
 };
 
 export type SyncPlan = {
@@ -68,6 +76,8 @@ export function planCommentSync(input: {
         replyCount: root.replyCount,
         nodeId: root.nodeId,
         pageId: root.pageId,
+        pinX: root.pinX,
+        pinY: root.pinY,
       });
       continue;
     }
@@ -78,6 +88,8 @@ export function planCommentSync(input: {
       replyCount: root.replyCount,
       nodeId: root.nodeId,
       pageId: root.pageId,
+      pinX: root.pinX,
+      pinY: root.pinY,
     });
   }
 

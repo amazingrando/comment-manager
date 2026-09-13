@@ -123,6 +123,8 @@ export type Database = {
           figma_message: string;
           node_id: string | null;
           page_id: string | null;
+          pin_x: number | null;
+          pin_y: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -137,6 +139,8 @@ export type Database = {
           figma_message?: string;
           node_id?: string | null;
           page_id?: string | null;
+          pin_x?: number | null;
+          pin_y?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -151,6 +155,8 @@ export type Database = {
           figma_message?: string;
           node_id?: string | null;
           page_id?: string | null;
+          pin_x?: number | null;
+          pin_y?: number | null;
           created_at?: string;
           updated_at?: string;
         };

@@ -16,3 +16,5 @@ export {
 } from "./sync";
 
 export { commentMessage, flattenCommentFragments, type CommentFragment } from "./comment-text";
+
+export { parseCommentPin, type CommentPin } from "./comment-pin";

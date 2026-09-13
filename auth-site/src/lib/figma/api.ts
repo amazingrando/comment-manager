@@ -1,4 +1,4 @@
-import { commentMessage } from "@comment-manager/shared";
+import { commentMessage, parseCommentPin } from "@comment-manager/shared";
 
 export class FigmaApiError extends Error {
   constructor(
@@ -50,10 +50,7 @@ export type FigmaApiComment = {
   created_at?: string;
   resolved_at?: string | null;
   parent_id?: string | number | null;
-  client_meta?: {
-    node_id?: string;
-    node_offset?: unknown;
-  } | null;
+  client_meta?: unknown;
 };
 
 export async function listFileComments(accessToken: string, fileKey: string) {
@@ -64,8 +61,8 @@ export async function listFileComments(accessToken: string, fileKey: string) {
   return data.comments ?? [];
 }
 
-export function commentNodeId(comment: FigmaApiComment): string | null {
-  return comment.client_meta?.node_id ?? null;
+export function commentPin(comment: FigmaApiComment) {
+  return parseCommentPin(comment.client_meta);
 }
 
 export function rootMessage(comment: FigmaApiComment): string {

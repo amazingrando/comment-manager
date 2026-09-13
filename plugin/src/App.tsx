@@ -213,7 +213,14 @@ export function App() {
               : current,
           );
         }}
-        onOpen={(card) => postToMain({ type: "jump", nodeId: card.node_id })}
+        onOpen={(card) =>
+          postToMain({
+            type: "jump",
+            nodeId: card.node_id,
+            x: card.pin_x,
+            y: card.pin_y,
+          })
+        }
       />
     </main>
   );

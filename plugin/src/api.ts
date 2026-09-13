@@ -5,7 +5,7 @@ export const AUTH_SITE_URL = __AUTH_SITE_URL__;
 export const PLUGIN_ID = __PLUGIN_ID__;
 
 export function postToMain(pluginMessage: unknown) {
-  parent.postMessage({ pluginMessage, pluginId: PLUGIN_ID }, "*");
+  parent.postMessage({ pluginMessage }, "*");
 }
 
 export async function startOAuth(): Promise<{

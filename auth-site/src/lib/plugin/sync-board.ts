@@ -5,7 +5,7 @@ import {
   type IncomingComment,
 } from "@comment-manager/shared";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { commentNodeId, listFileComments, rootMessage } from "@/lib/figma/api";
+import { commentPin, listFileComments, rootMessage } from "@/lib/figma/api";
 import { getValidFigmaAccessToken } from "@/lib/figma/tokens";
 import { ensureDefaultColumnSet } from "@/lib/auth/figma-user";
 import type { Card } from "@/lib/database.types";
@@ -18,15 +18,20 @@ function toIncoming(comments: Awaited<ReturnType<typeof listFileComments>>): Inc
     replyCount.set(parentId, (replyCount.get(parentId) ?? 0) + 1);
   }
 
-  return comments.map((comment) => ({
-    id: String(comment.id),
-    parentId: comment.parent_id ? String(comment.parent_id) : null,
-    message: rootMessage(comment),
-    resolvedAt: comment.resolved_at || null,
-    nodeId: commentNodeId(comment),
-    pageId: null,
-    replyCount: replyCount.get(String(comment.id)) ?? 0,
-  }));
+  return comments.map((comment) => {
+    const pin = commentPin(comment);
+    return {
+      id: String(comment.id),
+      parentId: comment.parent_id ? String(comment.parent_id) : null,
+      message: rootMessage(comment),
+      resolvedAt: comment.resolved_at || null,
+      nodeId: pin.nodeId,
+      pageId: null,
+      pinX: pin.x,
+      pinY: pin.y,
+      replyCount: replyCount.get(String(comment.id)) ?? 0,
+    };
+  });
 }
 
 function toExisting(cards: Card[]): ExistingCard[] {
@@ -38,6 +43,8 @@ function toExisting(cards: Card[]): ExistingCard[] {
     replyCount: card.reply_count,
     nodeId: card.node_id,
     pageId: card.page_id,
+    pinX: card.pin_x,
+    pinY: card.pin_y,
   }));
 }
 
@@ -85,6 +92,8 @@ export async function syncFileBoard(input: {
       reply_count: row.replyCount,
       node_id: row.nodeId,
       page_id: row.pageId,
+      pin_x: row.pinX,
+      pin_y: row.pinY,
     });
     if (error) throw error;
   }
@@ -97,6 +106,8 @@ export async function syncFileBoard(input: {
         reply_count: row.replyCount,
         node_id: row.nodeId,
         page_id: row.pageId,
+        pin_x: row.pinX,
+        pin_y: row.pinY,
         updated_at: now,
       })
       .eq("id", row.id)

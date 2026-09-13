@@ -5,18 +5,21 @@ export type PluginSession = {
   user: { id: string; handle: string; email: string };
 };
 
-export type MainToUi =
-  | {
-      type: "init";
-      fileKey: string;
-      fileName: string;
-      session: PluginSession | null;
-      pluginId: string;
-    }
-  | { type: "jump-failed" };
+export type MainToUi = {
+  type: "init";
+  fileKey: string;
+  fileName: string;
+  session: PluginSession | null;
+  pluginId: string;
+};
 
 export type UiToMain =
   | { type: "ready" }
   | { type: "store-session"; session: PluginSession }
   | { type: "clear-session" }
-  | { type: "jump"; nodeId: string | null };
+  | {
+      type: "jump";
+      nodeId: string | null;
+      x: number | null;
+      y: number | null;
+    };
