@@ -4,7 +4,20 @@ import type { MainToUi, PluginSession, UiToMain } from "./messages";
 
 const SESSION_KEY = "session";
 
-figma.showUI(__html__, { width: 760, height: 520, themeColors: true });
+try {
+  figma.showUI(__html__, {
+    width: 760,
+    height: 520,
+    themeColors: true,
+    title: "Comment Manager",
+  });
+} catch (error) {
+  figma.notify(
+    `Comment Manager failed to open: ${error instanceof Error ? error.message : "unknown error"}`,
+    { error: true },
+  );
+  figma.closePlugin();
+}
 
 figma.ui.onmessage = async (msg: UiToMain) => {
   if (msg.type === "ready") {

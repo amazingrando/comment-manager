@@ -40,7 +40,7 @@ async function figmaFetch<T>(
 }
 
 export type FigmaApiComment = {
-  id: string;
+  id: string | number;
   message?: string | { text?: string; mention?: string }[];
   user?: {
     id: string | number;
@@ -49,7 +49,7 @@ export type FigmaApiComment = {
   };
   created_at?: string;
   resolved_at?: string | null;
-  parent_id?: string | null;
+  parent_id?: string | number | null;
   client_meta?: {
     node_id?: string;
     node_offset?: unknown;

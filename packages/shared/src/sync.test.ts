@@ -60,6 +60,15 @@ describe("planCommentSync", () => {
     expect(plan.insert).toEqual([]);
   });
 
+  it("treats an empty parent id as a root comment", () => {
+    const plan = planCommentSync({
+      comments: [root({ id: "c1", parentId: "" })],
+      cards: [],
+      leftmostColumnId: left,
+    });
+    expect(plan.insert.map((row) => row.figmaCommentId)).toEqual(["c1"]);
+  });
+
   it("does not insert replies as cards", () => {
     const plan = planCommentSync({
       comments: [

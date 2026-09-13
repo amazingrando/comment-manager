@@ -7,7 +7,7 @@ This is a new product. It is not the [figma-triage](https://github.com/amazingra
 ## What it does
 
 - Runs as a Figma Community plugin (design files and FigJam).
-- Captures **root comments** in the open file when the plugin opens.
+- Captures **root comments** in the open file when the plugin opens, on Refresh, and every 5 seconds while the plugin stays open.
 - Puts new cards in the **leftmost** column. Default columns: To-do, In Progress, Done.
 - The board is **personal**. Two people in the same file have two boards.
 - Click a card to jump to the pin.
@@ -78,14 +78,14 @@ Open [http://localhost:3000](http://localhost:3000). Privacy: [http://localhost:
 
 ```bash
 PLUGIN_AUTH_SITE_URL=http://localhost:3000 \
-PLUGIN_SUPABASE_URL=http://127.0.0.1:54321 \
+PLUGIN_SUPABASE_URL=http://localhost:54321 \
 PLUGIN_SUPABASE_ANON_KEY=<publishable-key> \
 npm run dev:plugin
 ```
 
 In Figma: Plugins → Development → Import plugin from manifest → `plugin/manifest.json`.
 
-Save the Figma file so it has a file key, then run Comment Manager.
+The local manifest sets `enablePrivatePluginApi` so `figma.fileKey` is available in development. Save the Figma file so it has a file key, then run Comment Manager.
 
 ## Tests
 

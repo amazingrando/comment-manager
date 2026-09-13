@@ -62,6 +62,11 @@ export async function syncBoard(
 }
 
 export function createAuthedClient(session: PluginSession): SupabaseClient {
+  if (!__SUPABASE_ANON_KEY__) {
+    throw new Error(
+      "Plugin was built without PLUGIN_SUPABASE_ANON_KEY. Restart npm run dev:plugin.",
+    );
+  }
   const client = createClient(__SUPABASE_URL__, __SUPABASE_ANON_KEY__, {
     auth: { persistSession: false, autoRefreshToken: false },
   });

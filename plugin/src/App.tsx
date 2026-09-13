@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Column, EditTarget } from "@comment-manager/shared";
 import { addColumn, boardMode, renameColumn } from "@comment-manager/shared";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -18,6 +18,8 @@ import {
 import type { MainToUi } from "./messages";
 import type { BoardCard, BoardPayload, PluginSession } from "./types";
 
+const LIVE_SYNC_MS = 5_000;
+
 export function App() {
   const [fileKey, setFileKey] = useState("");
   const [fileName, setFileName] = useState("");
@@ -30,6 +32,7 @@ export function App() {
   const [showIgnored, setShowIgnored] = useState(false);
   const [newColumn, setNewColumn] = useState("");
   const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
+  const syncingRef = useRef(false);
 
   useEffect(() => {
     function onMessage(event: MessageEvent) {
@@ -48,26 +51,48 @@ export function App() {
     return () => window.removeEventListener("message", onMessage);
   }, []);
 
+  const refreshBoard = useCallback(
+    async (options?: { silent?: boolean }) => {
+      if (!session || !fileKey || syncingRef.current) return;
+      const silent = options?.silent ?? false;
+      syncingRef.current = true;
+      if (!silent) {
+        setBusy(true);
+        setError(null);
+      }
+      try {
+        setBoard(await syncBoard(session, fileKey));
+      } catch (err: unknown) {
+        if (!silent) {
+          setError(
+            err instanceof Error ? err.message : "Could not load the board",
+          );
+        }
+      } finally {
+        syncingRef.current = false;
+        if (!silent) setBusy(false);
+      }
+    },
+    [session, fileKey],
+  );
+
   useEffect(() => {
     if (!ready || !session || !fileKey) return;
-    let cancelled = false;
-    setBusy(true);
-    syncBoard(session, fileKey)
-      .then((payload) => {
-        if (!cancelled) setBoard(payload);
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Could not load the board");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setBusy(false);
-      });
-    return () => {
-      cancelled = true;
+    void refreshBoard();
+    const timer = window.setInterval(() => {
+      void refreshBoard({ silent: true });
+    }, LIVE_SYNC_MS);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        void refreshBoard({ silent: true });
+      }
     };
-  }, [ready, session, fileKey]);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [ready, session, fileKey, refreshBoard]);
 
   const mode = boardMode(Boolean(board?.fileIsCustom), target);
   const visibleColumns: Column[] = useMemo(() => {
@@ -130,7 +155,10 @@ export function App() {
     return (
       <main className="pad">
         <h1>Comment Manager</h1>
-        <p>Save the file in Figma, then run the plugin again. A file key is required to load comments.</p>
+        <p>
+          This file has no key yet. Save it with File → Save (or ⌘S), then run
+          the plugin again. A file key is required to load comments.
+        </p>
       </main>
     );
   }
@@ -159,8 +187,8 @@ export function App() {
     );
   }
 
-  if (!board || busy) {
-    return <p className="pad">Loading comments…</p>;
+  if (!board) {
+    return <p className="pad">{busy ? "Loading comments…" : "Could not load the board."}</p>;
   }
 
   const visibleCards = board.cards;
@@ -232,6 +260,9 @@ export function App() {
           />
           Show ignored
         </label>
+        <button type="button" disabled={busy} onClick={() => void refreshBoard()}>
+          {busy ? "Refreshing…" : "Refresh"}
+        </button>
         <button type="button" onClick={signOut}>
           Sign out
         </button>
@@ -245,8 +276,8 @@ export function App() {
       ) : null}
       {emptyBoard && mode === "file-board" ? (
         <p className="pad">
-          No open root comments in this file. New comments appear the next time
-          you open the plugin.
+          No open root comments in this file. New pins appear here within a few
+          seconds.
         </p>
       ) : null}
       <Board

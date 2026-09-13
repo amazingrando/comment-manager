@@ -1,4 +1,5 @@
 import * as esbuild from "esbuild";
+import { existsSync, readFileSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -6,11 +7,30 @@ import { fileURLToPath } from "node:url";
 const root = path.dirname(fileURLToPath(import.meta.url));
 const watch = process.argv.includes("--watch");
 
+const envPath = path.join(root, ".env");
+if (existsSync(envPath)) {
+  for (const line of readFileSync(envPath, "utf8").split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq === -1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    const value = trimmed.slice(eq + 1).trim();
+    if (key && process.env[key] === undefined) process.env[key] = value;
+  }
+}
+
 const authSiteUrl = process.env.PLUGIN_AUTH_SITE_URL || "http://localhost:3000";
 const supabaseUrl =
-  process.env.PLUGIN_SUPABASE_URL || "http://127.0.0.1:54321";
+  process.env.PLUGIN_SUPABASE_URL || "http://localhost:54321";
 const supabaseAnonKey = process.env.PLUGIN_SUPABASE_ANON_KEY || "";
 const pluginId = process.env.PLUGIN_ID || "comment-manager";
+
+if (!supabaseAnonKey) {
+  throw new Error(
+    "PLUGIN_SUPABASE_ANON_KEY is missing. Put the publishable key in plugin/.env and restart npm run dev:plugin.",
+  );
+}
 
 const define = {
   __AUTH_SITE_URL__: JSON.stringify(authSiteUrl),
@@ -24,6 +44,7 @@ await mkdir(path.join(root, "dist"), { recursive: true });
 const main = {
   entryPoints: [path.join(root, "src/main.ts")],
   bundle: true,
+  minify: true,
   outfile: path.join(root, "dist/code.js"),
   target: "es2017",
   format: "iife",
@@ -33,6 +54,7 @@ const main = {
 const ui = {
   entryPoints: [path.join(root, "src/ui.tsx")],
   bundle: true,
+  minify: true,
   outfile: path.join(root, "dist/ui.js"),
   target: "es2017",
   format: "iife",

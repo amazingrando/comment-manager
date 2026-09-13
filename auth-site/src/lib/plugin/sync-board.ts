@@ -14,18 +14,19 @@ import type { Card } from "@/lib/database.types";
 function toIncoming(comments: Awaited<ReturnType<typeof listFileComments>>): IncomingComment[] {
   const replyCount = new Map<string, number>();
   for (const comment of comments) {
-    if (!comment.parent_id) continue;
-    replyCount.set(comment.parent_id, (replyCount.get(comment.parent_id) ?? 0) + 1);
+    if (!comment.parent_id || comment.parent_id === "0") continue;
+    const parentId = String(comment.parent_id);
+    replyCount.set(parentId, (replyCount.get(parentId) ?? 0) + 1);
   }
 
   return comments.map((comment) => ({
-    id: comment.id,
-    parentId: comment.parent_id ?? null,
+    id: String(comment.id),
+    parentId: comment.parent_id ? String(comment.parent_id) : null,
     message: rootMessage(comment),
-    resolvedAt: comment.resolved_at ?? null,
+    resolvedAt: comment.resolved_at || null,
     nodeId: commentNodeId(comment),
     pageId: null,
-    replyCount: replyCount.get(comment.id) ?? 0,
+    replyCount: replyCount.get(String(comment.id)) ?? 0,
   }));
 }
 

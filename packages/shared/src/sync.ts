@@ -50,7 +50,12 @@ export function planCommentSync(input: {
   const cardsByComment = new Map(
     input.cards.map((card) => [card.figmaCommentId, card]),
   );
-  const roots = input.comments.filter((comment) => comment.parentId == null);
+  const roots = input.comments.filter(
+    (comment) =>
+      comment.parentId == null ||
+      comment.parentId === "" ||
+      comment.parentId === "0",
+  );
   const insert: SyncInsert[] = [];
   const update: SyncUpdate[] = [];
 
