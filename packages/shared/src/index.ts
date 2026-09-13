@@ -1,22 +1,9 @@
 export {
-  addColumn,
-  boardMode,
-  canDeleteColumn,
-  canResetToDefault,
   createDefaultColumns,
-  deleteColumn,
-  extraNamedColumnsWithCards,
-  fileBecomesCustom,
   leftmost,
-  remapCardsToDefault,
-  reindex,
-  renameColumn,
-  reorderColumns,
   sortColumns,
   DEFAULT_COLUMN_NAMES,
-  type BoardMode,
   type Column,
-  type EditTarget,
 } from "./columns";
 
 export {

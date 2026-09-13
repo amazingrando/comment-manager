@@ -13,9 +13,7 @@ export type BoardCard = {
 
 export type BoardPayload = {
   fileKey: string;
-  fileIsCustom: boolean;
   columns: { id: string; name: string; position: number }[];
-  defaultColumns: { id: string; name: string; position: number }[];
   cards: BoardCard[];
 };
 

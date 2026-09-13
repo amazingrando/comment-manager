@@ -1,6 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Column, EditTarget } from "@comment-manager/shared";
-import { addColumn, boardMode, renameColumn } from "@comment-manager/shared";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   createAuthedClient,
@@ -10,11 +8,6 @@ import {
   syncBoard,
 } from "./api";
 import { Board } from "./Board";
-import {
-  applyDeleteColumn,
-  applyReset,
-  saveColumnSet,
-} from "./columns-api";
 import type { MainToUi } from "./messages";
 import type { BoardPayload, PluginSession } from "./types";
 
@@ -28,8 +21,6 @@ export function App() {
   const [board, setBoard] = useState<BoardPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [target, setTarget] = useState<EditTarget>("file");
-  const [newColumn, setNewColumn] = useState("");
   const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
   const syncingRef = useRef(false);
 
@@ -93,12 +84,6 @@ export function App() {
     };
   }, [ready, session, fileKey, refreshBoard]);
 
-  const mode = boardMode(Boolean(board?.fileIsCustom), target);
-  const visibleColumns: Column[] = useMemo(() => {
-    if (!board) return [];
-    return mode === "default-editor" ? board.defaultColumns : board.columns;
-  }, [board, mode]);
-
   async function signIn() {
     setError(null);
     setBusy(true);
@@ -121,29 +106,6 @@ export function App() {
     setBoard(null);
     setSupabase(null);
     postToMain({ type: "clear-session" });
-  }
-
-  async function persistColumns(next: Column[]) {
-    if (!supabase || !session || !board) return;
-    const editingDefault = target === "default";
-    const fileKeyForSet = editingDefault ? null : fileKey;
-    await saveColumnSet(supabase, {
-      userId: session.user.id,
-      fileKey: fileKeyForSet,
-      columns: next,
-    });
-    setBoard((current) => {
-      if (!current) return current;
-      if (editingDefault) {
-        const stillFollowing = !current.fileIsCustom;
-        return {
-          ...current,
-          defaultColumns: next,
-          columns: stillFollowing ? next : current.columns,
-        };
-      }
-      return { ...current, columns: next, fileIsCustom: true };
-    });
   }
 
   if (!ready) {
@@ -190,8 +152,7 @@ export function App() {
     return <p className="pad">{busy ? "Loading comments…" : "Could not load the board."}</p>;
   }
 
-  const visibleCards = board.cards;
-  const emptyBoard = mode === "file-board" && visibleCards.length === 0;
+  const emptyBoard = board.cards.length === 0;
 
   return (
     <main className="app">
@@ -200,55 +161,6 @@ export function App() {
           <strong>Comment Manager</strong>
           <span className="muted"> {fileName}</span>
         </div>
-        <label className="toggle">
-          <span>Edit this file</span>
-          <input
-            type="radio"
-            name="target"
-            checked={target === "file"}
-            onChange={() => setTarget("file")}
-          />
-        </label>
-        <label className="toggle">
-          <span>Edit my default</span>
-          <input
-            type="radio"
-            name="target"
-            checked={target === "default"}
-            onChange={() => setTarget("default")}
-          />
-        </label>
-        {board.fileIsCustom && target === "file" ? (
-          <button
-            type="button"
-            onClick={() => {
-              if (!supabase || !session) return;
-              applyReset(supabase, {
-                userId: session.user.id,
-                fileKey,
-                customColumns: board.columns,
-                defaultColumns: board.defaultColumns,
-                cards: board.cards,
-              })
-                .then(() =>
-                  setBoard((current) =>
-                    current
-                      ? {
-                          ...current,
-                          fileIsCustom: false,
-                          columns: current.defaultColumns,
-                        }
-                      : current,
-                  ),
-                )
-                .catch((err: unknown) =>
-                  setError(err instanceof Error ? err.message : "Reset failed"),
-                );
-            }}
-          >
-            Reset to default
-          </button>
-        ) : null}
         <button type="button" disabled={busy} onClick={() => void refreshBoard()}>
           {busy ? "Refreshing…" : "Refresh"}
         </button>
@@ -257,21 +169,15 @@ export function App() {
         </button>
       </header>
       {error ? <p className="error">{error}</p> : null}
-      {mode === "default-editor" ? (
-        <p className="banner">
-          You are editing the default columns. This file’s cards are hidden until
-          you switch back to Edit this file.
-        </p>
-      ) : null}
-      {emptyBoard && mode === "file-board" ? (
+      {emptyBoard ? (
         <p className="pad">
           No open root comments in this file. New pins appear here within a few
           seconds.
         </p>
       ) : null}
       <Board
-        columns={visibleColumns}
-        cards={mode === "default-editor" ? [] : visibleCards}
+        columns={board.columns}
+        cards={board.cards}
         onMove={(cardId, columnId) => {
           if (!supabase) return;
           const card = board.cards.find((row) => row.id === cardId);
@@ -307,75 +213,8 @@ export function App() {
               : current,
           );
         }}
-        onRename={(columnId, name) => {
-          const next = renameColumn(visibleColumns, columnId, name);
-          void persistColumns(next).catch((err: unknown) =>
-            setError(err instanceof Error ? err.message : "Could not rename"),
-          );
-        }}
-        onDelete={(columnId) => {
-          if (!supabase || !session) return;
-          const editingDefault = target === "default";
-          applyDeleteColumn(supabase, {
-            userId: session.user.id,
-            fileKey: editingDefault ? null : fileKey,
-            columns: visibleColumns,
-            columnId,
-            cards: editingDefault ? [] : board.cards,
-          })
-            .then((result) => {
-              setBoard((current) => {
-                if (!current) return current;
-                const cards = editingDefault
-                  ? current.cards
-                  : current.cards.map((card) =>
-                      card.column_id === columnId
-                        ? { ...card, column_id: result.destinationId }
-                        : card,
-                    );
-                if (editingDefault) {
-                  const stillFollowing = !current.fileIsCustom;
-                  return {
-                    ...current,
-                    defaultColumns: result.columns,
-                    columns: stillFollowing ? result.columns : current.columns,
-                    cards,
-                  };
-                }
-                return {
-                  ...current,
-                  columns: result.columns,
-                  fileIsCustom: true,
-                  cards,
-                };
-              });
-            })
-            .catch((err: unknown) =>
-              setError(err instanceof Error ? err.message : "Could not delete"),
-            );
-        }}
         onOpen={(card) => postToMain({ type: "jump", nodeId: card.node_id })}
       />
-      <form
-        className="add"
-        onSubmit={(event) => {
-          event.preventDefault();
-          const name = newColumn.trim();
-          if (!name) return;
-          const next = addColumn(visibleColumns, name, crypto.randomUUID());
-          setNewColumn("");
-          void persistColumns(next).catch((err: unknown) =>
-            setError(err instanceof Error ? err.message : "Could not add column"),
-          );
-        }}
-      >
-        <input
-          value={newColumn}
-          onChange={(event) => setNewColumn(event.target.value)}
-          placeholder="New column"
-        />
-        <button type="submit">Add column</button>
-      </form>
     </main>
   );
 }

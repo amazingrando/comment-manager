@@ -10,7 +10,7 @@ import {
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import type { Column } from "@comment-manager/shared";
-import { sortColumns } from "@comment-manager/shared";
+import { leftmost, sortColumns } from "@comment-manager/shared";
 import type { BoardCard } from "./types";
 
 function DraggableCard({
@@ -45,20 +45,13 @@ function DraggableCard({
 function ColumnLane({
   column,
   cards,
-  canDelete,
-  onRename,
-  onDelete,
   onOpen,
 }: {
   column: Column;
   cards: BoardCard[];
-  canDelete: boolean;
-  onRename: (columnId: string, name: string) => void;
-  onDelete: (columnId: string) => void;
   onOpen: (card: BoardCard) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
-  const [name, setName] = useState(column.name);
 
   return (
     <section
@@ -66,24 +59,7 @@ function ColumnLane({
       className={isOver ? "column over" : "column"}
     >
       <header className="column-head">
-        <input
-          aria-label="Column name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          onBlur={() => {
-            const next = name.trim();
-            if (!next) {
-              setName(column.name);
-              return;
-            }
-            if (next !== column.name) onRename(column.id, next);
-          }}
-        />
-        {canDelete ? (
-          <button type="button" onClick={() => onDelete(column.id)}>
-            Delete
-          </button>
-        ) : null}
+        <h2>{column.name}</h2>
       </header>
       <div className="column-cards">
         {cards.map((card) => (
@@ -98,15 +74,11 @@ export function Board({
   columns,
   cards,
   onMove,
-  onRename,
-  onDelete,
   onOpen,
 }: {
   columns: Column[];
   cards: BoardCard[];
   onMove: (cardId: string, columnId: string) => void;
-  onRename: (columnId: string, name: string) => void;
-  onDelete: (columnId: string) => void;
   onOpen: (card: BoardCard) => void;
 }) {
   const sensors = useSensors(
@@ -114,18 +86,19 @@ export function Board({
   );
   const [error, setError] = useState<string | null>(null);
   const sorted = useMemo(() => sortColumns(columns), [columns]);
+  const inboxId = sorted[0] ? leftmost(sorted).id : "";
   const byColumn = useMemo(() => {
     const map = new Map<string, BoardCard[]>();
     for (const column of sorted) map.set(column.id, []);
     for (const card of cards) {
-      const list = map.get(card.column_id);
+      const list = map.get(card.column_id) ?? map.get(inboxId);
       if (list) list.push(card);
     }
     for (const list of map.values()) {
       list.sort((a, b) => a.sort_rank - b.sort_rank);
     }
     return map;
-  }, [cards, sorted]);
+  }, [cards, inboxId, sorted]);
 
   function onDragEnd(event: DragEndEvent) {
     setError(null);
@@ -145,9 +118,6 @@ export function Board({
             key={column.id}
             column={column}
             cards={byColumn.get(column.id) ?? []}
-            canDelete={sorted.length > 1}
-            onRename={onRename}
-            onDelete={onDelete}
             onOpen={onOpen}
           />
         ))}

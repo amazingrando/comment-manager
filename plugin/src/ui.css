@@ -18,31 +18,16 @@
   border-bottom: 1px solid var(--figma-color-border, #e5e5e5);
 }
 
-.toggle {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  font-size: 12px;
-}
-
 .muted {
   color: var(--figma-color-text-secondary, #666);
   font-size: 12px;
 }
 
-.banner,
 .error {
   margin: 0;
   padding: 8px 12px;
   font-size: 12px;
-}
-
-.error {
   color: #b42318;
-}
-
-.banner {
-  background: var(--figma-color-bg-brand-tertiary, #e6f2f1);
 }
 
 .board {
@@ -69,18 +54,10 @@
   outline: 2px solid var(--figma-color-border-brand, #0d9488);
 }
 
-.column-head {
-  display: flex;
-  gap: 4px;
-}
-
-.column-head input {
-  flex: 1;
+.column-head h2 {
+  margin: 0;
   font-size: 12px;
   font-weight: 600;
-  border: 0;
-  background: transparent;
-  color: inherit;
 }
 
 .column-cards {
@@ -111,17 +88,6 @@
 
 .card button {
   font-size: 11px;
-}
-
-.add {
-  display: flex;
-  gap: 8px;
-  padding: 8px 12px;
-  border-top: 1px solid var(--figma-color-border, #e5e5e5);
-}
-
-.add input {
-  flex: 1;
 }
 
 button,

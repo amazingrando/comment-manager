@@ -8,7 +8,7 @@ This is a new product. It is not the [figma-triage](https://github.com/amazingra
 
 - Runs as a Figma Community plugin (design files and FigJam).
 - Captures **root comments** in the open file when the plugin opens, on Refresh, and every 5 seconds while the plugin stays open.
-- Puts new cards in the **leftmost** column. Default columns: To-do, In Progress, Done.
+- Puts new cards in **To-do**. Lanes are fixed: To-do, In Progress, Done.
 - The board is **personal**. Two people in the same file have two boards.
 - Click a card to jump to the pin.
 - Drag to Done does **not** resolve the Figma comment (Figma has no official resolve API).

@@ -1,14 +1,13 @@
 import {
   leftmost,
   planCommentSync,
-  type Column,
   type ExistingCard,
   type IncomingComment,
 } from "@comment-manager/shared";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { commentNodeId, listFileComments, rootMessage } from "@/lib/figma/api";
 import { getValidFigmaAccessToken } from "@/lib/figma/tokens";
-import { ensureDefaultColumnSet, parseColumns } from "@/lib/auth/figma-user";
+import { ensureDefaultColumnSet } from "@/lib/auth/figma-user";
 import type { Card } from "@/lib/database.types";
 
 function toIncoming(comments: Awaited<ReturnType<typeof listFileComments>>): IncomingComment[] {
@@ -49,19 +48,7 @@ export async function syncFileBoard(input: {
   const admin = createAdminClient();
   const accessToken = await getValidFigmaAccessToken(input.userId);
   const comments = await listFileComments(accessToken, input.fileKey);
-  const defaultColumns = await ensureDefaultColumnSet(input.userId);
-
-  const { data: fileSet } = await admin
-    .from("column_sets")
-    .select("columns")
-    .eq("user_id", input.userId)
-    .eq("file_key", input.fileKey)
-    .maybeSingle();
-
-  const fileIsCustom = Boolean(fileSet);
-  const columns: Column[] = fileSet
-    ? parseColumns(fileSet.columns)
-    : defaultColumns;
+  const columns = await ensureDefaultColumnSet(input.userId);
   const inboxId = leftmost(columns).id;
 
   const { data: cardRows, error: cardError } = await admin
@@ -127,9 +114,7 @@ export async function syncFileBoard(input: {
 
   return {
     fileKey: input.fileKey,
-    fileIsCustom,
     columns,
-    defaultColumns,
     cards: (nextCards ?? []) as Card[],
   };
 }
