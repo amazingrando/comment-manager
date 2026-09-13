@@ -1,0 +1,134 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.pad {
+  padding: 16px;
+}
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--figma-color-border, #e5e5e5);
+}
+
+.toggle {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.muted {
+  color: var(--figma-color-text-secondary, #666);
+  font-size: 12px;
+}
+
+.banner,
+.error {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.error {
+  color: #b42318;
+}
+
+.banner {
+  background: var(--figma-color-bg-brand-tertiary, #e6f2f1);
+}
+
+.board {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.column {
+  flex: 1 0 180px;
+  min-width: 180px;
+  background: var(--figma-color-bg-secondary, #f5f5f5);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.column.over {
+  outline: 2px solid var(--figma-color-border-brand, #0d9488);
+}
+
+.column-head {
+  display: flex;
+  gap: 4px;
+}
+
+.column-head input {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.column-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card {
+  background: var(--figma-color-bg, #fff);
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
+}
+
+.card-body {
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  white-space: pre-wrap;
+}
+
+.card button {
+  font-size: 11px;
+}
+
+.add {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--figma-color-border, #e5e5e5);
+}
+
+.add input {
+  flex: 1;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}

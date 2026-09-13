@@ -1,0 +1,22 @@
+{
+  "name": "Comment Manager",
+  "id": "comment-manager",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "ui": "dist/ui.html",
+  "editorType": ["figma", "figjam"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": [
+      "https://api.figma.com",
+      "https://www.figma.com",
+      "https://*.supabase.co"
+    ],
+    "devAllowedDomains": [
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "http://127.0.0.1:54321"
+    ],
+    "reasoning": "Sign in with Figma, store a personal board, and read comments from the open file."
+  }
+}

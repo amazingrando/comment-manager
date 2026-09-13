@@ -1,0 +1,25 @@
+{
+  "name": "comment-manager",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "packages/shared",
+    "plugin",
+    "auth-site"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w auth-site",
+    "dev:plugin": "npm run watch -w plugin",
+    "build": "npm run build -w @comment-manager/shared && npm run build -w plugin && npm run build -w auth-site",
+    "test": "npm run test -w @comment-manager/shared && npm run test -w auth-site",
+    "test:db": "npx supabase test db --local",
+    "lint": "npm run lint -w auth-site",
+    "db:start": "npx supabase start",
+    "db:stop": "npx supabase stop",
+    "db:reset": "npx supabase db reset --local"
+  },
+  "devDependencies": {
+    "supabase": "^2.114.0",
+    "typescript": "^5"
+  }
+}
