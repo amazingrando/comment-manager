@@ -1,28 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import {
-  createAuthedClient,
-  pollSession,
-  postToMain,
-  startOAuth,
-  syncBoard,
-} from "./api";
+import { pollSession, postToMain, startOAuth } from "./api";
+import { moveCard } from "./board-state";
 import { Board } from "./Board";
 import type { MainToUi } from "./messages";
-import type { BoardPayload, PluginSession } from "./types";
+import type { BoardPayload, PluginUser } from "./types";
 
 const LIVE_SYNC_MS = 5_000;
 
 export function App() {
   const [fileKey, setFileKey] = useState("");
   const [fileName, setFileName] = useState("");
-  const [session, setSession] = useState<PluginSession | null>(null);
+  const [user, setUser] = useState<PluginUser | null>(null);
   const [ready, setReady] = useState(false);
   const [board, setBoard] = useState<BoardPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
-  const syncingRef = useRef(false);
+  const boardRef = useRef<BoardPayload | null>(null);
+  boardRef.current = board;
 
   useEffect(() => {
     function onMessage(event: MessageEvent) {
@@ -31,9 +25,30 @@ export function App() {
       if (msg.type === "init") {
         setFileKey(msg.fileKey);
         setFileName(msg.fileName);
-        setSession(msg.session);
-        if (msg.session) setSupabase(createAuthedClient(msg.session));
+        setUser(msg.user);
+        setBoard(msg.board);
         setReady(true);
+        return;
+      }
+      if (msg.type === "board") {
+        setBoard(msg.board);
+        setBusy(false);
+        return;
+      }
+      if (msg.type === "signed-out") {
+        setUser(null);
+        setBoard(null);
+        setBusy(false);
+        return;
+      }
+      if (msg.type === "error") {
+        setBusy(false);
+        if (
+          !boardRef.current ||
+          msg.message === "Sign in expired. Try again."
+        ) {
+          setError(msg.message);
+        }
       }
     }
     window.addEventListener("message", onMessage);
@@ -42,39 +57,26 @@ export function App() {
   }, []);
 
   const refreshBoard = useCallback(
-    async (options?: { silent?: boolean }) => {
-      if (!session || !fileKey || syncingRef.current) return;
-      const silent = options?.silent ?? false;
-      syncingRef.current = true;
-      if (!silent) {
+    (options?: { silent?: boolean }) => {
+      if (!user || !fileKey) return;
+      if (!options?.silent) {
         setBusy(true);
         setError(null);
       }
-      try {
-        setBoard(await syncBoard(session, fileKey));
-      } catch (err: unknown) {
-        if (!silent) {
-          setError(
-            err instanceof Error ? err.message : "Could not load the board",
-          );
-        }
-      } finally {
-        syncingRef.current = false;
-        if (!silent) setBusy(false);
-      }
+      postToMain({ type: "sync" });
     },
-    [session, fileKey],
+    [user, fileKey],
   );
 
   useEffect(() => {
-    if (!ready || !session || !fileKey) return;
-    void refreshBoard();
+    if (!ready || !user || !fileKey) return;
+    refreshBoard();
     const timer = window.setInterval(() => {
-      void refreshBoard({ silent: true });
+      refreshBoard({ silent: true });
     }, LIVE_SYNC_MS);
     const onVisible = () => {
       if (document.visibilityState === "visible") {
-        void refreshBoard({ silent: true });
+        refreshBoard({ silent: true });
       }
     };
     document.addEventListener("visibilitychange", onVisible);
@@ -82,7 +84,7 @@ export function App() {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [ready, session, fileKey, refreshBoard]);
+  }, [ready, user, fileKey, refreshBoard]);
 
   async function signIn() {
     setError(null);
@@ -91,20 +93,17 @@ export function App() {
       const { readKey, authorizeUrl } = await startOAuth();
       window.open(authorizeUrl, "_blank");
       const next = await pollSession(readKey);
-      setSession(next);
-      setSupabase(createAuthedClient(next));
+      setUser(next.user);
       postToMain({ type: "store-session", session: next });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign in failed");
-    } finally {
       setBusy(false);
     }
   }
 
   function signOut() {
-    setSession(null);
+    setUser(null);
     setBoard(null);
-    setSupabase(null);
     postToMain({ type: "clear-session" });
   }
 
@@ -124,11 +123,14 @@ export function App() {
     );
   }
 
-  if (!session) {
+  if (!user) {
     return (
       <main className="pad">
         <h1>Comment Manager</h1>
-        <p>Sign in with Figma to capture root comments in this file and keep a personal board.</p>
+        <p>
+          Sign in with Figma to capture root comments in this file and keep a
+          personal board.
+        </p>
         {error ? <p className="error">{error}</p> : null}
         <button type="button" disabled={busy} onClick={() => void signIn()}>
           {busy ? "Waiting for Figma…" : "Sign in with Figma"}
@@ -149,7 +151,9 @@ export function App() {
   }
 
   if (!board) {
-    return <p className="pad">{busy ? "Loading comments…" : "Could not load the board."}</p>;
+    return (
+      <p className="pad">{busy ? "Loading comments…" : "Could not load the board."}</p>
+    );
   }
 
   const emptyBoard = board.cards.length === 0;
@@ -161,7 +165,7 @@ export function App() {
           <strong>Comment Manager</strong>
           <span className="muted"> {fileName}</span>
         </div>
-        <button type="button" disabled={busy} onClick={() => void refreshBoard()}>
+        <button type="button" disabled={busy} onClick={() => refreshBoard()}>
           {busy ? "Refreshing…" : "Refresh"}
         </button>
         <button type="button" onClick={signOut}>
@@ -179,39 +183,10 @@ export function App() {
         columns={board.columns}
         cards={board.cards}
         onMove={(cardId, columnId) => {
-          if (!supabase) return;
-          const card = board.cards.find((row) => row.id === cardId);
-          if (!card || card.column_id === columnId) return;
-          const nextRank =
-            Math.max(
-              0,
-              ...board.cards
-                .filter((row) => row.column_id === columnId)
-                .map((row) => row.sort_rank),
-            ) + 1;
-          void supabase
-            .from("cards")
-            .update({
-              column_id: columnId,
-              sort_rank: nextRank,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", cardId)
-            .then(({ error: updateError }) => {
-              if (updateError) setError(updateError.message);
-            });
           setBoard((current) =>
-            current
-              ? {
-                  ...current,
-                  cards: current.cards.map((row) =>
-                    row.id === cardId
-                      ? { ...row, column_id: columnId, sort_rank: nextRank }
-                      : row,
-                  ),
-                }
-              : current,
+            current ? moveCard(current, cardId, columnId) : current,
           );
+          postToMain({ type: "move-card", cardId, columnId });
         }}
         onOpen={(card) =>
           postToMain({

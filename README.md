@@ -12,14 +12,13 @@ This is a new product. It is not the [figma-triage](https://github.com/amazingra
 - The board is **personal**. Two people in the same file have two boards.
 - Click a card to jump to the pin.
 - Drag to Done does **not** resolve the Figma comment (Figma has no official resolve API).
-- There is no web board. This auth site is only Sign in with Figma plus API.
+- There is no web board. The auth site is only Sign in with Figma. The plugin stores the board and token in Figma `clientStorage`.
 
 ## Repo layout
 
-- `plugin/` — Figma plugin (sandbox + UI)
-- `auth-site/` — Next.js OAuth callback and comment sync API
+- `plugin/` — Figma plugin (sandbox + UI). Reads comments and stores the board.
+- `auth-site/` — Next.js OAuth callback, plugin handoff, and token refresh
 - `packages/shared/` — column rules and comment sync plan (tested)
-- `supabase/` — schema and RLS
 
 ## Local setup
 
@@ -28,15 +27,8 @@ This is a new product. It is not the [figma-triage](https://github.com/amazingra
 ```bash
 cp .env.example .env
 cp auth-site/.env.example auth-site/.env.local
+cp plugin/.env.example plugin/.env
 ```
-
-Generate a token key:
-
-```bash
-openssl rand -hex 32
-```
-
-Put the same values in `.env` and `auth-site/.env.local`.
 
 ### 2. Figma OAuth app
 
@@ -47,39 +39,21 @@ Put the same values in `.env` and `auth-site/.env.local`.
 
 This is a **new** Figma OAuth app. Do not reuse the figma-triage app.
 
-### 3. Supabase
-
-Docker must be running.
+### 3. Auth site
 
 ```bash
 npm install
-npx supabase start
-```
-
-Copy the API URL, publishable key, and service_role key into `auth-site/.env.local`:
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-- `SUPABASE_SECRET_KEY`
-- `TOKEN_ENCRYPTION_KEY`
-
-This is a **new** empty Supabase project. Do not migrate figma-triage data.
-
-### 4. Auth site
-
-```bash
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000). Privacy: [http://localhost:3000/privacy](http://localhost:3000/privacy).
 
-### 5. Plugin
+Run this as a single Node process (`next dev` or `next start`). OAuth handoffs live in memory for 10 minutes so the plugin can pick up the token. Serverless hosts can drop a handoff between start and poll.
+
+### 4. Plugin
 
 ```bash
-PLUGIN_AUTH_SITE_URL=http://localhost:3000 \
-PLUGIN_SUPABASE_URL=http://localhost:54321 \
-PLUGIN_SUPABASE_ANON_KEY=<publishable-key> \
-npm run dev:plugin
+PLUGIN_AUTH_SITE_URL=http://localhost:3000 npm run dev:plugin
 ```
 
 In Figma: Plugins → Development → Import plugin from manifest → `plugin/manifest.json`.
@@ -90,7 +64,6 @@ The local manifest sets `enablePrivatePluginApi` so `figma.fileKey` is available
 
 ```bash
 npm test
-npx supabase test db --local
 ```
 
 ## Community listing
@@ -98,6 +71,6 @@ npx supabase test db --local
 The plugin is intended for the public Figma Community. Before submit:
 
 - Replace `plugin/manifest.json` `id` with the id Figma assigns
-- Point `networkAccess.allowedDomains` at your hosted auth site and Supabase project
+- Point `networkAccess.allowedDomains` at your hosted auth site
 - Host `/privacy` at a public HTTPS URL
-- Create a hosted Figma OAuth app (not localhost) and a hosted Supabase project
+- Create a hosted Figma OAuth app (not localhost)

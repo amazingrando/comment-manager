@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   }
 
   const { readKey, writeKey } = newHandoffKeys();
-  await createHandoff(readKey, writeKey);
+  createHandoff(readKey, writeKey);
   const { appUrl } = serverEnv();
   const authorizeUrl = `${appUrl}/login?writeKey=${encodeURIComponent(writeKey)}`;
   return jsonWithCors(request, { readKey, authorizeUrl });

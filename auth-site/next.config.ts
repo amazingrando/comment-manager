@@ -14,7 +14,6 @@ const contentSecurityPolicy = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@comment-manager/shared"],
   async headers() {
     return [
       {

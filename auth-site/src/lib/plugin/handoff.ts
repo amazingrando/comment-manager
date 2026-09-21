@@ -1,6 +1,4 @@
 import { createHash, randomBytes } from "node:crypto";
-import { createAdminClient } from "@/lib/supabase/admin";
-import type { Json } from "@/lib/database.types";
 
 const HANDOFF_TTL_MS = 10 * 60 * 1000;
 
@@ -10,6 +8,30 @@ export type PluginSessionPayload = {
   expires_at: number;
   user: { id: string; handle: string; email: string };
 };
+
+type Handoff = {
+  writeKeyHash: string;
+  payload: PluginSessionPayload | null;
+  expiresAt: number;
+};
+
+const globalStore = globalThis as typeof globalThis & {
+  __commentManagerHandoffs?: Map<string, Handoff>;
+};
+
+function store() {
+  if (!globalStore.__commentManagerHandoffs) {
+    globalStore.__commentManagerHandoffs = new Map();
+  }
+  return globalStore.__commentManagerHandoffs;
+}
+
+function prune(now = Date.now()) {
+  const handoffs = store();
+  for (const [readKey, row] of handoffs) {
+    if (row.expiresAt < now) handoffs.delete(readKey);
+  }
+}
 
 export function hashWriteKey(writeKey: string) {
   return createHash("sha256").update(writeKey).digest("hex");
@@ -22,50 +44,44 @@ export function newHandoffKeys() {
   };
 }
 
-export async function createHandoff(readKey: string, writeKey: string) {
-  const admin = createAdminClient();
-  const { error } = await admin.from("plugin_oauth_handoffs").insert({
-    read_key: readKey,
-    write_key_hash: hashWriteKey(writeKey),
+export function createHandoff(readKey: string, writeKey: string) {
+  prune();
+  store().set(readKey, {
+    writeKeyHash: hashWriteKey(writeKey),
     payload: null,
-    expires_at: new Date(Date.now() + HANDOFF_TTL_MS).toISOString(),
+    expiresAt: Date.now() + HANDOFF_TTL_MS,
   });
-  if (error) throw error;
 }
 
-export async function writeHandoffPayload(
+export function writeHandoffPayload(
   writeKey: string,
   payload: PluginSessionPayload,
 ) {
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("plugin_oauth_handoffs")
-    .update({ payload: payload as unknown as Json })
-    .eq("write_key_hash", hashWriteKey(writeKey))
-    .gt("expires_at", new Date().toISOString())
-    .select("read_key")
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) throw new Error("OAuth handoff expired or was not found");
+  prune();
+  const writeHash = hashWriteKey(writeKey);
+  const now = Date.now();
+  for (const row of store().values()) {
+    if (row.writeKeyHash === writeHash && row.expiresAt >= now) {
+      row.payload = payload;
+      return;
+    }
+  }
+  throw new Error("OAuth handoff expired or was not found");
 }
 
-export async function readHandoff(readKey: string) {
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("plugin_oauth_handoffs")
-    .select("payload, expires_at")
-    .eq("read_key", readKey)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) return { status: "missing" as const };
-  if (Date.parse(data.expires_at) < Date.now()) {
-    await admin.from("plugin_oauth_handoffs").delete().eq("read_key", readKey);
+export function readHandoff(readKey: string) {
+  const handoffs = store();
+  const row = handoffs.get(readKey);
+  if (!row) return { status: "missing" as const };
+  if (row.expiresAt < Date.now()) {
+    handoffs.delete(readKey);
     return { status: "expired" as const };
   }
-  if (!data.payload) return { status: "pending" as const };
-  await admin.from("plugin_oauth_handoffs").delete().eq("read_key", readKey);
-  return {
-    status: "ready" as const,
-    payload: data.payload as unknown as PluginSessionPayload,
-  };
+  if (!row.payload) return { status: "pending" as const };
+  handoffs.delete(readKey);
+  return { status: "ready" as const, payload: row.payload };
+}
+
+export function resetHandoffsForTests() {
+  store().clear();
 }

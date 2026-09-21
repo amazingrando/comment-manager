@@ -19,6 +19,11 @@ const WRITE_KEY_COOKIE = "figma_oauth_write_key";
 
 export type { FigmaTokenResponse, FigmaUser };
 
+export function tokenExpiresAt(expiresIn?: number) {
+  const seconds = expiresIn ?? 60 * 60 * 24 * 90;
+  return Math.floor(Date.now() / 1000) + seconds;
+}
+
 export function resolveFigmaOAuthRedirectUri(input: {
   appUrl: string;
   explicitRedirectUri?: string;

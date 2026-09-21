@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { planCommentSync, type ExistingCard, type IncomingComment } from "./sync";
+import {
+  applyCommentSync,
+  planCommentSync,
+  type AppliedCard,
+  type ExistingCard,
+  type IncomingComment,
+} from "./sync";
 
 const left = "col-todo";
 
@@ -137,5 +143,55 @@ describe("planCommentSync", () => {
     });
     expect(plan.update).toEqual([]);
     expect(plan.insert).toEqual([]);
+  });
+});
+
+function applied(
+  overrides: Partial<AppliedCard> & Pick<AppliedCard, "id" | "figmaCommentId">,
+): AppliedCard {
+  return {
+    ...card(overrides),
+    sortRank: 1,
+    ...overrides,
+  };
+}
+
+describe("applyCommentSync", () => {
+  it("inserts a new root with the next sort rank", () => {
+    const cards = applyCommentSync({
+      comments: [root({ id: "c2" })],
+      cards: [applied({ id: "c1", figmaCommentId: "c1", columnId: left, sortRank: 3 })],
+      leftmostColumnId: left,
+    });
+    const inserted = cards.find((row) => row.figmaCommentId === "c2");
+    expect(inserted).toMatchObject({
+      id: "c2",
+      columnId: left,
+      sortRank: 4,
+    });
+    expect(cards.find((row) => row.id === "c1")?.columnId).toBe(left);
+  });
+
+  it("updates text without changing lane or rank", () => {
+    const cards = applyCommentSync({
+      comments: [root({ id: "c1", message: "Edited" })],
+      cards: [
+        applied({
+          id: "c1",
+          figmaCommentId: "c1",
+          columnId: "col-doing",
+          sortRank: 2,
+        }),
+      ],
+      leftmostColumnId: left,
+    });
+    expect(cards).toEqual([
+      expect.objectContaining({
+        id: "c1",
+        figmaMessage: "Edited",
+        columnId: "col-doing",
+        sortRank: 2,
+      }),
+    ]);
   });
 });

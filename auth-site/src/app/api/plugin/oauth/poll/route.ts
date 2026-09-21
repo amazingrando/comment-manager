@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     return jsonWithCors(request, { error: "readKey is required" }, { status: 400 });
   }
 
-  const result = await readHandoff(readKey);
+  const result = readHandoff(readKey);
   if (result.status === "pending") {
     return jsonWithCors(request, { status: "pending" }, { status: 202 });
   }

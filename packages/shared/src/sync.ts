@@ -48,6 +48,8 @@ export type SyncPlan = {
   update: SyncUpdate[];
 };
 
+export type AppliedCard = ExistingCard & { sortRank: number };
+
 export function planCommentSync(input: {
   comments: IncomingComment[];
   cards: ExistingCard[];
@@ -94,4 +96,59 @@ export function planCommentSync(input: {
   }
 
   return { insert, update };
+}
+
+export function applyCommentSync(input: {
+  comments: IncomingComment[];
+  cards: AppliedCard[];
+  leftmostColumnId: string;
+}): AppliedCard[] {
+  const plan = planCommentSync({
+    comments: input.comments,
+    cards: input.cards,
+    leftmostColumnId: input.leftmostColumnId,
+  });
+
+  const next = new Map(input.cards.map((card) => [card.id, { ...card }]));
+  const ranks = new Map<string, number>();
+  for (const card of input.cards) {
+    ranks.set(
+      card.columnId,
+      Math.max(ranks.get(card.columnId) ?? 0, card.sortRank),
+    );
+  }
+
+  for (const row of plan.insert) {
+    const nextRank = (ranks.get(row.columnId) ?? 0) + 1;
+    ranks.set(row.columnId, nextRank);
+    const id = row.figmaCommentId;
+    next.set(id, {
+      id,
+      figmaCommentId: row.figmaCommentId,
+      figmaMessage: row.figmaMessage,
+      columnId: row.columnId,
+      replyCount: row.replyCount,
+      nodeId: row.nodeId,
+      pageId: row.pageId,
+      pinX: row.pinX,
+      pinY: row.pinY,
+      sortRank: nextRank,
+    });
+  }
+
+  for (const row of plan.update) {
+    const existing = next.get(row.id);
+    if (!existing) continue;
+    next.set(row.id, {
+      ...existing,
+      figmaMessage: row.figmaMessage,
+      replyCount: row.replyCount,
+      nodeId: row.nodeId,
+      pageId: row.pageId,
+      pinX: row.pinX,
+      pinY: row.pinY,
+    });
+  }
+
+  return [...next.values()];
 }

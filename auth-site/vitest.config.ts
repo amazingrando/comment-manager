@@ -8,10 +8,6 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
-    env: {
-      TOKEN_ENCRYPTION_KEY:
-        "079cb00742fdaccaa85ec71ed1139131e0d84208f3814da95a10fc18770fd970",
-    },
   },
   resolve: {
     alias: {

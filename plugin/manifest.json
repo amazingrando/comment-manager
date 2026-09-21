@@ -10,13 +10,11 @@
   "networkAccess": {
     "allowedDomains": [
       "https://api.figma.com",
-      "https://www.figma.com",
-      "https://*.supabase.co"
+      "https://www.figma.com"
     ],
     "devAllowedDomains": [
-      "http://localhost:3000",
-      "http://localhost:54321"
+      "http://localhost:3000"
     ],
-    "reasoning": "Sign in with Figma, store a personal board, and read comments from the open file."
+    "reasoning": "Sign in with Figma and read comments from the open file."
   }
 }

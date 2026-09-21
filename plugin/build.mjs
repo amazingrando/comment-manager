@@ -21,22 +21,9 @@ if (existsSync(envPath)) {
 }
 
 const authSiteUrl = process.env.PLUGIN_AUTH_SITE_URL || "http://localhost:3000";
-const supabaseUrl =
-  process.env.PLUGIN_SUPABASE_URL || "http://localhost:54321";
-const supabaseAnonKey = process.env.PLUGIN_SUPABASE_ANON_KEY || "";
-const pluginId = process.env.PLUGIN_ID || "comment-manager";
-
-if (!supabaseAnonKey) {
-  throw new Error(
-    "PLUGIN_SUPABASE_ANON_KEY is missing. Put the publishable key in plugin/.env and restart npm run dev:plugin.",
-  );
-}
 
 const define = {
   __AUTH_SITE_URL__: JSON.stringify(authSiteUrl),
-  __SUPABASE_URL__: JSON.stringify(supabaseUrl),
-  __SUPABASE_ANON_KEY__: JSON.stringify(supabaseAnonKey),
-  __PLUGIN_ID__: JSON.stringify(pluginId),
 };
 
 await mkdir(path.join(root, "dist"), { recursive: true });

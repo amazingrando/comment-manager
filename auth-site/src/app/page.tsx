@@ -15,8 +15,8 @@ export default function HomePage() {
         no web board.
       </p>
       <p className="text-base leading-7 text-stone-700">
-        We store your personal board and encrypted Figma tokens so the plugin
-        can read comments in the file you have open.
+        After you sign in, the plugin keeps your Figma token and personal board
+        on this computer. This site does not store comments or cards.
       </p>
       <p>
         <Link className="text-teal-800 underline" href="/privacy">

@@ -11,7 +11,6 @@
     "@comment-manager/shared": "*",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/utilities": "^3.2.2",
-    "@supabase/supabase-js": "^2.112.3",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },

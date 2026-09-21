@@ -21,8 +21,8 @@ export default async function LoginPage({
       ) : writeKey ? (
         <>
           <p className="leading-7 text-stone-700">
-            Comment Manager will read comments in the file you have open and
-            store a personal board for you.
+            Comment Manager will read comments in the file you have open. Your
+            personal board stays in the plugin on this computer.
           </p>
           {error ? (
             <p className="text-red-800">Sign in failed. Try again.</p>
